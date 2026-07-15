@@ -1,0 +1,229 @@
+ // Ceci est votre fichier de schéma Prisma,
+// en savoir plus dans la docs : https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum OrderStatus {
+  PENDING
+  PAYMENT_CONFIRMED
+  PREPARING
+  READY
+  DELIVERING
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  YAS_MONEY
+  MOOV_MONEY
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  RESCHEDULED
+  CANCELLED
+}
+
+enum MenuType {
+  DAILY
+  WEEKLY
+  SPECIAL
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  role      Role     @default(EMPLOYEE)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  imageUrl    String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  dishes      Dish[]
+}
+
+model Dish {
+  id               String       @id @default(uuid())
+  name             String
+  description      String?
+  price            Decimal      @db.Decimal(10, 2)
+  categoryId       String
+  images           String[]
+  isAvailable      Boolean      @default(true)
+  preparationTime  Int?
+  spiceLevel       Int?
+  allergens        String[]
+  isPromoted       Boolean      @default(false)
+  isNew            Boolean      @default(false)
+  orderCount       Int          @default(0)
+  qrCodeUrl        String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  category         Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  menuItems        MenuItem[]
+  orderItems       OrderItem[]
+  promotions       Promotion[] @relation("DishPromotions")
+  reviews          Review[]    @relation("DishReviews")
+}
+
+model Menu {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  type        MenuType
+  date        DateTime?
+  dayOfWeek   Int?
+  startDate   DateTime?
+  endDate     DateTime?
+  imageUrl    String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  menuItems   MenuItem[]
+}
+
+model MenuItem {
+  id       String @id @default(uuid())
+  menuId   String
+  dishId   String
+  price    Decimal? @db.Decimal(10, 2)
+  quantity Int?
+  menu     Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  dish     Dish   @relation(fields: [dishId], references: [id], onDelete: Cascade)
+}
+
+model Promotion {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  percentage  Decimal? @db.Decimal(5, 2)
+  fixedAmount Decimal? @db.Decimal(10, 2)
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  dishId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  dish        Dish?    @relation("DishPromotions", fields: [dishId], references: [id])
+}
+
+model Order {
+  id              String       @id @default(uuid())
+  orderNumber     String       @unique
+  customerName    String
+  customerPhone   String
+  deliveryAddress String?
+  comment         String?
+  orderType       String       @default("delivery")
+  totalAmount     Decimal      @db.Decimal(10, 2)
+  status          OrderStatus  @default(PENDING)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  orderItems      OrderItem[]
+  payment         Payment?
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  dishId    String
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dish      Dish    @relation(fields: [dishId], references: [id])
+}
+
+model Payment {
+  id              String         @id @default(uuid())
+  orderId         String         @unique
+  amount          Decimal        @db.Decimal(10, 2)
+  method          PaymentMethod
+  status          PaymentStatus  @default(PENDING)
+  fedaPayReference String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Reservation {
+  id              String            @id @default(uuid())
+  customerName    String
+  customerPhone   String
+  date            DateTime
+  numberOfPeople  Int
+  comment         String?
+  status          ReservationStatus @default(PENDING)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  name      String
+  rating    Int
+  comment   String?
+  isApproved Boolean @default(false)
+  dishId    String?
+  createdAt DateTime @default(now())
+  dish      Dish?    @relation("DishReviews", fields: [dishId], references: [id])
+}
+
+model GalleryItem {
+  id        String   @id @default(uuid())
+  imageUrl  String
+  title     String?
+  category  String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model BlogPost {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  imageUrl  String?
+  isPublished Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteContent {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  updatedAt   DateTime @updatedAt
+}
