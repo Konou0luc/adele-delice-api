@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { requireAuth, requireRole } from '@/lib/auth-helpers';
+import { requireRole } from '@/lib/auth-helpers';
 
 type Params = Promise<{ id: string }>;
 
 /**
  * @swagger
- * /api/orders/{id}:
+ * /api/payments/{id}:
  *   get:
- *     summary: Récupérer une commande par son ID
- *     tags: [Orders]
+ *     summary: Récupérer un paiement par son ID
+ *     tags: [Payments]
  *     parameters:
  *       - in: path
  *         name: id
@@ -18,35 +18,35 @@ type Params = Promise<{ id: string }>;
  *           type: string
  *     responses:
  *       200:
- *         description: Commande trouvée
+ *         description: Paiement trouvé
  *       404:
- *         description: Commande non trouvée
+ *         description: Paiement non trouvé
  *       500:
  *         description: Erreur serveur
  */
 export async function GET(request: Request, segmentData: { params: Params }) {
-  const authResult = await requireAuth();
+  const authResult = await requireRole(["ADMIN", "MANAGER", "EMPLOYEE"]);
   if (authResult.response) return authResult.response;
 
   try {
     const { id } = await segmentData.params;
-    const order = await prisma.order.findUnique({
+    const payment = await prisma.payment.findUnique({
       where: { id },
-      include: { orderItems: { include: { dish: true } }, payment: true }
+      include: { order: true }
     });
-    if (!order) return NextResponse.json({ erreur: 'Commande introuvable' }, { status: 404 });
-    return NextResponse.json(order);
+    if (!payment) return NextResponse.json({ erreur: 'Paiement introuvable' }, { status: 404 });
+    return NextResponse.json(payment);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de récupérer la commande' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de récupérer le paiement' }, { status: 500 });
   }
 }
 
 /**
  * @swagger
- * /api/orders/{id}:
+ * /api/payments/{id}:
  *   put:
- *     summary: Mettre à jour une commande (changer son statut, etc.) (authentifié seulement)
- *     tags: [Orders]
+ *     summary: Mettre à jour le statut d'un paiement (authentifié seulement)
+ *     tags: [Payments]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -60,12 +60,18 @@ export async function GET(request: Request, segmentData: { params: Params }) {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Order'
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [PENDING, SUCCESS, FAILED]
  *     responses:
  *       200:
- *         description: Commande mise à jour
+ *         description: Paiement mis à jour
  *       401:
  *         description: Authentification requise
+ *       403:
+ *         description: Accès non autorisé
  *       500:
  *         description: Erreur serveur
  */
@@ -76,12 +82,12 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
   try {
     const { id } = await segmentData.params;
     const body = await request.json();
-    const order = await prisma.order.update({
+    const payment = await prisma.payment.update({
       where: { id },
-      data: body
+      data: { status: body.status }
     });
-    return NextResponse.json(order);
+    return NextResponse.json(payment);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de mettre à jour la commande' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de mettre à jour le paiement' }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAuth, requireRole } from '@/lib/auth-helpers';
 
 /**
  * @swagger
@@ -20,6 +21,9 @@ import prisma from '@/lib/prisma';
  *         description: Erreur serveur
  */
 export async function GET() {
+  const authResult = await requireAuth();
+  if (authResult.response) return authResult.response;
+  
   try {
     const reservations = await prisma.reservation.findMany({
       orderBy: { date: 'asc' }

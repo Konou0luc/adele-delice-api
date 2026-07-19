@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAuth, requireRole } from '@/lib/auth-helpers';
+import { OrderCreateOrderSchema } from '@/lib/validators';
 
 /**
  * @swagger
  * /api/orders:
  *   get:
- *     summary: Récupérer toutes les commandes ou une commande par son numéro
+ *     summary: Récupérer toutes les commandes ou une commande par son numéro (authentifié seulement)
  *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: orderNumber
@@ -15,12 +19,17 @@ import prisma from '@/lib/prisma';
  *     responses:
  *       200:
  *         description: Liste des commandes ou commande unique
+ *       401:
+ *         description: Authentification requise
  *       404:
  *         description: Commande non trouvée
  *       500:
  *         description: Erreur serveur
  */
 export async function GET(request: Request) {
+  const authResult = await requireAuth();
+  if (authResult.response) return authResult.response;
+  
   try {
     const { searchParams } = new URL(request.url);
     const orderNumber = searchParams.get('orderNumber');
@@ -89,17 +98,26 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const validationResult = OrderCreateOrderSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { erreur: 'Données invalides', details: validationResult.error.flatten() },
+        { status: 400 }
+      );
+    }
+
     const orderNumber = `AD${Date.now()}`;
     
     const order = await prisma.order.create({
       data: {
-        ...body,
+        ...validationResult.data,
         orderNumber,
         orderItems: {
-          create: body.orderItems.map((item: Record<string, unknown>) => ({
-            dishId: item.dishId as string,
-            quantity: item.quantity as number,
-            unitPrice: item.unitPrice as number
+          create: validationResult.data.orderItems.map(item => ({
+            dishId: item.dishId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice
           }))
         }
       },

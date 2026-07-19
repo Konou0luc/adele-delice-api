@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireRole } from '@/lib/auth-helpers';
 
 /**
  * @swagger
@@ -61,8 +62,10 @@ export async function GET(request: Request) {
  * @swagger
  * /api/dishes:
  *   post:
- *     summary: Créer un nouveau plat
+ *     summary: Créer un nouveau plat (ADMIN/MANAGER seulement)
  *     tags: [Dishes]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -72,10 +75,20 @@ export async function GET(request: Request) {
  *     responses:
  *       201:
  *         description: Plat créé
+ *       401:
+ *         description: Authentification requise
+ *       403:
+ *         description: Accès non autorisé
  *       500:
  *         description: Erreur serveur
  */
 export async function POST(request: Request) {
+  const authResult = await requireRole(["ADMIN", "MANAGER"]);
+  
+  if (authResult.response) {
+    return authResult.response;
+  }
+  
   try {
     const body = await request.json();
     const dish = await prisma.dish.create({

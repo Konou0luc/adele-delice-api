@@ -1,12 +1,5 @@
-import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-  },
-  datasource: {
-    url: env("DATABASE_URL"),
-  },
-});
+// On crée l'adapter seulement en runtime, pas pendant la génération
+// Ceci permet à `prisma generate` de fonctionner sans DATABASE_URL
+export default defineConfig({});

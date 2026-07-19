@@ -7,10 +7,10 @@ type Params = Promise<{ id: string }>;
 
 /**
  * @swagger
- * /api/dishes/{id}:
+ * /api/blog-posts/{id}:
  *   get:
- *     summary: Récupérer un plat par son ID
- *     tags: [Dishes]
+ *     summary: Récupérer un article de blog par son ID
+ *     tags: [Blog]
  *     parameters:
  *       - in: path
  *         name: id
@@ -19,34 +19,31 @@ type Params = Promise<{ id: string }>;
  *           type: string
  *     responses:
  *       200:
- *         description: Plat trouvé
+ *         description: Article trouvé
  *       404:
- *         description: Plat non trouvé
+ *         description: Article non trouvé
  *       500:
  *         description: Erreur serveur
  */
 export async function GET(request: Request, segmentData: { params: Params }) {
   try {
     const { id } = await segmentData.params;
-    const dish = await prisma.dish.findUnique({
-      where: { id },
-      include: { category: true, reviews: true }
+    const blogPost = await prisma.blogPost.findUnique({
+      where: { id }
     });
-    if (!dish) return NextResponse.json({ erreur: 'Plat introuvable' }, { status: 404 });
-    return NextResponse.json(dish);
+    if (!blogPost) return NextResponse.json({ erreur: 'Article introuvable' }, { status: 404 });
+    return NextResponse.json(blogPost);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de récupérer le plat' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de récupérer l\'article' }, { status: 500 });
   }
 }
 
 /**
  * @swagger
- * /api/dishes/{id}:
+ * /api/blog-posts/{id}:
  *   put:
- *     summary: Mettre à jour un plat (ADMIN/MANAGER seulement)
- *     tags: [Dishes]
- *     security:
- *       - bearerAuth: []
+ *     summary: Mettre à jour un article de blog
+ *     tags: [Blog]
  *     parameters:
  *       - in: path
  *         name: id
@@ -58,43 +55,36 @@ export async function GET(request: Request, segmentData: { params: Params }) {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Dish'
+ *             $ref: '#/components/schemas/BlogPost'
  *     responses:
  *       200:
- *         description: Plat mis à jour
- *       401:
- *         description: Authentification requise
- *       403:
- *         description: Accès non autorisé
+ *         description: Article mis à jour
  *       500:
  *         description: Erreur serveur
  */
 export async function PUT(request: Request, segmentData: { params: Params }) {
   const authResult = await requireRole(["ADMIN", "MANAGER"]);
-  
-  if (authResult.response) {
-    return authResult.response;
-  }
-  
+  if (authResult.response) return authResult.response;
+
   try {
     const { id } = await segmentData.params;
     const body = await request.json();
-    const dish = await prisma.dish.update({
+    const blogPost = await prisma.blogPost.update({
       where: { id },
       data: body
     });
-    return NextResponse.json(dish);
+    return NextResponse.json(blogPost);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de mettre à jour le plat' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de mettre à jour l\'article' }, { status: 500 });
   }
 }
 
 /**
  * @swagger
- * /api/dishes/{id}:
+ * /api/blog-posts/{id}:
  *   delete:
- *     summary: Supprimer un plat et ses images sur Cloudinary (ADMIN/MANAGER seulement)
- *     tags: [Dishes]
+ *     summary: Supprimer un article de blog et son image sur Cloudinary (ADMIN/MANAGER seulement)
+ *     tags: [Blog]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -105,7 +95,7 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
  *           type: string
  *     responses:
  *       200:
- *         description: Plat supprimé
+ *         description: Article supprimé
  *       401:
  *         description: Authentification requise
  *       403:
@@ -115,23 +105,17 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
  */
 export async function DELETE(request: Request, segmentData: { params: Params }) {
   const authResult = await requireRole(["ADMIN", "MANAGER"]);
-  
-  if (authResult.response) {
-    return authResult.response;
-  }
-  
+  if (authResult.response) return authResult.response;
+
   try {
     const { id } = await segmentData.params;
-    // Récupérer le plat avant suppression pour obtenir les images
-    const dish = await prisma.dish.findUnique({ where: { id } });
-    if (dish) {
-      // Supprimer les images de Cloudinary
-      await deleteCloudinaryImages(dish.images);
+    const blogPost = await prisma.blogPost.findUnique({ where: { id } });
+    if (blogPost && blogPost.imageUrl) {
+      await deleteCloudinaryImages([blogPost.imageUrl]);
     }
-    // Supprimer le plat de la base de données
-    await prisma.dish.delete({ where: { id } });
+    await prisma.blogPost.delete({ where: { id } });
     return NextResponse.json({ succès: true });
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de supprimer le plat' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de supprimer l\'article' }, { status: 500 });
   }
 }

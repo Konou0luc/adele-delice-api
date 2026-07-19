@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireRole } from '@/lib/auth-helpers';
 
 /**
  * @swagger
@@ -24,7 +25,33 @@ export async function GET() {
     const categories = await prisma.category.findMany({
       where: { isActive: true },
       orderBy: { order: 'asc' },
-      include: { dishes: true }
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        imageUrl: true,
+        order: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        dishes: {
+          where: { isAvailable: true },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            images: true,
+            isAvailable: true,
+            preparationTime: true,
+            spiceLevel: true,
+            allergens: true,
+            isPromoted: true,
+            isNew: true,
+            orderCount: true
+          }
+        }
+      }
     });
     return NextResponse.json(categories);
   } catch {
@@ -36,8 +63,10 @@ export async function GET() {
  * @swagger
  * /api/categories:
  *   post:
- *     summary: Créer une nouvelle catégorie
+ *     summary: Créer une nouvelle catégorie (ADMIN/MANAGER seulement)
  *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -56,10 +85,20 @@ export async function GET() {
  *     responses:
  *       201:
  *         description: Catégorie créée
+ *       401:
+ *         description: Authentification requise
+ *       403:
+ *         description: Accès non autorisé
  *       500:
  *         description: Erreur serveur
  */
 export async function POST(request: Request) {
+  const authResult = await requireRole(["ADMIN", "MANAGER"]);
+  
+  if (authResult.response) {
+    return authResult.response;
+  }
+  
   try {
     const body = await request.json();
     const category = await prisma.category.create({

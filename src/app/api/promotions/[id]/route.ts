@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { deleteCloudinaryImages } from '@/lib/cloudinary-utils';
 import { requireRole } from '@/lib/auth-helpers';
 
 type Params = Promise<{ id: string }>;
 
 /**
  * @swagger
- * /api/categories/{id}:
+ * /api/promotions/{id}:
  *   get:
- *     summary: Récupérer une catégorie par son ID
- *     tags: [Categories]
+ *     summary: Récupérer une promotion par son ID
+ *     tags: [Promotions]
  *     parameters:
  *       - in: path
  *         name: id
@@ -19,32 +18,32 @@ type Params = Promise<{ id: string }>;
  *           type: string
  *     responses:
  *       200:
- *         description: Catégorie trouvée
+ *         description: Promotion trouvée
  *       404:
- *         description: Catégorie non trouvée
+ *         description: Promotion non trouvée
  *       500:
  *         description: Erreur serveur
  */
 export async function GET(request: Request, segmentData: { params: Params }) {
   try {
     const { id } = await segmentData.params;
-    const category = await prisma.category.findUnique({
+    const promotion = await prisma.promotion.findUnique({
       where: { id },
-      include: { dishes: true }
+      include: { dish: true }
     });
-    if (!category) return NextResponse.json({ erreur: 'Catégorie introuvable' }, { status: 404 });
-    return NextResponse.json(category);
+    if (!promotion) return NextResponse.json({ erreur: 'Promotion introuvable' }, { status: 404 });
+    return NextResponse.json(promotion);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de récupérer la catégorie' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de récupérer la promotion' }, { status: 500 });
   }
 }
 
 /**
  * @swagger
- * /api/categories/{id}:
+ * /api/promotions/{id}:
  *   put:
- *     summary: Mettre à jour une catégorie
- *     tags: [Categories]
+ *     summary: Mettre à jour une promotion
+ *     tags: [Promotions]
  *     parameters:
  *       - in: path
  *         name: id
@@ -56,10 +55,10 @@ export async function GET(request: Request, segmentData: { params: Params }) {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Category'
+ *             $ref: '#/components/schemas/Promotion'
  *     responses:
  *       200:
- *         description: Catégorie mise à jour
+ *         description: Promotion mise à jour
  *       500:
  *         description: Erreur serveur
  */
@@ -70,22 +69,26 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
   try {
     const { id } = await segmentData.params;
     const body = await request.json();
-    const category = await prisma.category.update({
+    const data: Record<string, unknown> = { ...body };
+    if (body.startDate) data.startDate = new Date(body.startDate);
+    if (body.endDate) data.endDate = new Date(body.endDate);
+    
+    const promotion = await prisma.promotion.update({
       where: { id },
-      data: body
+      data
     });
-    return NextResponse.json(category);
+    return NextResponse.json(promotion);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de mettre à jour la catégorie' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de mettre à jour la promotion' }, { status: 500 });
   }
 }
 
 /**
  * @swagger
- * /api/categories/{id}:
+ * /api/promotions/{id}:
  *   delete:
- *     summary: Supprimer une catégorie et son image sur Cloudinary (ADMIN/MANAGER seulement)
- *     tags: [Categories]
+ *     summary: Supprimer une promotion (désactive) (ADMIN/MANAGER seulement)
+ *     tags: [Promotions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -96,7 +99,7 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
  *           type: string
  *     responses:
  *       200:
- *         description: Catégorie supprimée
+ *         description: Promotion désactivée
  *       401:
  *         description: Authentification requise
  *       403:
@@ -110,13 +113,12 @@ export async function DELETE(request: Request, segmentData: { params: Params }) 
 
   try {
     const { id } = await segmentData.params;
-    const category = await prisma.category.findUnique({ where: { id } });
-    if (category && category.imageUrl) {
-      await deleteCloudinaryImages([category.imageUrl]);
-    }
-    await prisma.category.delete({ where: { id } });
-    return NextResponse.json({ succès: true });
+    const promotion = await prisma.promotion.update({
+      where: { id },
+      data: { isActive: false }
+    });
+    return NextResponse.json({ succès: true, promotion });
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de supprimer la catégorie' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de supprimer la promotion' }, { status: 500 });
   }
 }

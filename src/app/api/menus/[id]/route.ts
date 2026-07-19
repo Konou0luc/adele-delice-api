@@ -7,10 +7,10 @@ type Params = Promise<{ id: string }>;
 
 /**
  * @swagger
- * /api/dishes/{id}:
+ * /api/menus/{id}:
  *   get:
- *     summary: Récupérer un plat par son ID
- *     tags: [Dishes]
+ *     summary: Récupérer un menu par son ID
+ *     tags: [Menus]
  *     parameters:
  *       - in: path
  *         name: id
@@ -19,32 +19,32 @@ type Params = Promise<{ id: string }>;
  *           type: string
  *     responses:
  *       200:
- *         description: Plat trouvé
+ *         description: Menu trouvé
  *       404:
- *         description: Plat non trouvé
+ *         description: Menu non trouvé
  *       500:
  *         description: Erreur serveur
  */
 export async function GET(request: Request, segmentData: { params: Params }) {
   try {
     const { id } = await segmentData.params;
-    const dish = await prisma.dish.findUnique({
+    const menu = await prisma.menu.findUnique({
       where: { id },
-      include: { category: true, reviews: true }
+      include: { menuItems: { include: { dish: true } } }
     });
-    if (!dish) return NextResponse.json({ erreur: 'Plat introuvable' }, { status: 404 });
-    return NextResponse.json(dish);
+    if (!menu) return NextResponse.json({ erreur: 'Menu introuvable' }, { status: 404 });
+    return NextResponse.json(menu);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de récupérer le plat' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de récupérer le menu' }, { status: 500 });
   }
 }
 
 /**
  * @swagger
- * /api/dishes/{id}:
+ * /api/menus/{id}:
  *   put:
- *     summary: Mettre à jour un plat (ADMIN/MANAGER seulement)
- *     tags: [Dishes]
+ *     summary: Mettre à jour un menu (ADMIN/MANAGER seulement)
+ *     tags: [Menus]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -58,10 +58,10 @@ export async function GET(request: Request, segmentData: { params: Params }) {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Dish'
+ *             $ref: '#/components/schemas/Menu'
  *     responses:
  *       200:
- *         description: Plat mis à jour
+ *         description: Menu mis à jour
  *       401:
  *         description: Authentification requise
  *       403:
@@ -79,22 +79,22 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
   try {
     const { id } = await segmentData.params;
     const body = await request.json();
-    const dish = await prisma.dish.update({
+    const menu = await prisma.menu.update({
       where: { id },
       data: body
     });
-    return NextResponse.json(dish);
+    return NextResponse.json(menu);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de mettre à jour le plat' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de mettre à jour le menu' }, { status: 500 });
   }
 }
 
 /**
  * @swagger
- * /api/dishes/{id}:
+ * /api/menus/{id}:
  *   delete:
- *     summary: Supprimer un plat et ses images sur Cloudinary (ADMIN/MANAGER seulement)
- *     tags: [Dishes]
+ *     summary: Supprimer un menu et son image sur Cloudinary (ADMIN/MANAGER seulement)
+ *     tags: [Menus]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -105,7 +105,7 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
  *           type: string
  *     responses:
  *       200:
- *         description: Plat supprimé
+ *         description: Menu supprimé
  *       401:
  *         description: Authentification requise
  *       403:
@@ -122,16 +122,13 @@ export async function DELETE(request: Request, segmentData: { params: Params }) 
   
   try {
     const { id } = await segmentData.params;
-    // Récupérer le plat avant suppression pour obtenir les images
-    const dish = await prisma.dish.findUnique({ where: { id } });
-    if (dish) {
-      // Supprimer les images de Cloudinary
-      await deleteCloudinaryImages(dish.images);
+    const menu = await prisma.menu.findUnique({ where: { id } });
+    if (menu && menu.imageUrl) {
+      await deleteCloudinaryImages([menu.imageUrl]);
     }
-    // Supprimer le plat de la base de données
-    await prisma.dish.delete({ where: { id } });
+    await prisma.menu.delete({ where: { id } });
     return NextResponse.json({ succès: true });
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de supprimer le plat' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de supprimer le menu' }, { status: 500 });
   }
 }

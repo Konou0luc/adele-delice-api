@@ -1,8 +1,8 @@
  // Ceci est votre fichier de schéma Prisma,
-// en savoir plus dans la docs : https://pris.ly/d/prisma-schema
+ // en savoir plus dans la docs : https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
@@ -51,16 +51,55 @@ enum MenuType {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  firstName String
-  lastName  String
-  phone     String?
-  role      Role     @default(EMPLOYEE)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  role          Role      @default(EMPLOYEE)
+  isActive      Boolean   @default(true)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Category {
@@ -172,7 +211,7 @@ model Payment {
   amount          Decimal        @db.Decimal(10, 2)
   method          PaymentMethod
   status          PaymentStatus  @default(PENDING)
-  fedaPayReference String?
+  fedaPayReference String?       @unique
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)

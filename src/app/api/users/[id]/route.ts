@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { deleteCloudinaryImages } from '@/lib/cloudinary-utils';
 import { requireRole } from '@/lib/auth-helpers';
 
 type Params = Promise<{ id: string }>;
 
 /**
  * @swagger
- * /api/dishes/{id}:
+ * /api/users/{id}:
  *   get:
- *     summary: Récupérer un plat par son ID
- *     tags: [Dishes]
+ *     summary: Récupérer un utilisateur par son ID
+ *     tags: [Users]
  *     parameters:
  *       - in: path
  *         name: id
@@ -19,32 +18,34 @@ type Params = Promise<{ id: string }>;
  *           type: string
  *     responses:
  *       200:
- *         description: Plat trouvé
+ *         description: Utilisateur trouvé
  *       404:
- *         description: Plat non trouvé
+ *         description: Utilisateur non trouvé
  *       500:
  *         description: Erreur serveur
  */
 export async function GET(request: Request, segmentData: { params: Params }) {
+  const authResult = await requireRole(["ADMIN", "MANAGER"]);
+  if (authResult.response) return authResult.response;
+
   try {
     const { id } = await segmentData.params;
-    const dish = await prisma.dish.findUnique({
-      where: { id },
-      include: { category: true, reviews: true }
+    const user = await prisma.user.findUnique({
+      where: { id }
     });
-    if (!dish) return NextResponse.json({ erreur: 'Plat introuvable' }, { status: 404 });
-    return NextResponse.json(dish);
+    if (!user) return NextResponse.json({ erreur: 'Utilisateur introuvable' }, { status: 404 });
+    return NextResponse.json(user);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de récupérer le plat' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de récupérer l\'utilisateur' }, { status: 500 });
   }
 }
 
 /**
  * @swagger
- * /api/dishes/{id}:
+ * /api/users/{id}:
  *   put:
- *     summary: Mettre à jour un plat (ADMIN/MANAGER seulement)
- *     tags: [Dishes]
+ *     summary: Mettre à jour un utilisateur (ADMIN/MANAGER seulement)
+ *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -58,10 +59,10 @@ export async function GET(request: Request, segmentData: { params: Params }) {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Dish'
+ *             $ref: '#/components/schemas/User'
  *     responses:
  *       200:
- *         description: Plat mis à jour
+ *         description: Utilisateur mis à jour
  *       401:
  *         description: Authentification requise
  *       403:
@@ -71,30 +72,27 @@ export async function GET(request: Request, segmentData: { params: Params }) {
  */
 export async function PUT(request: Request, segmentData: { params: Params }) {
   const authResult = await requireRole(["ADMIN", "MANAGER"]);
-  
-  if (authResult.response) {
-    return authResult.response;
-  }
-  
+  if (authResult.response) return authResult.response;
+
   try {
     const { id } = await segmentData.params;
     const body = await request.json();
-    const dish = await prisma.dish.update({
+    const user = await prisma.user.update({
       where: { id },
       data: body
     });
-    return NextResponse.json(dish);
+    return NextResponse.json(user);
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de mettre à jour le plat' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de mettre à jour l\'utilisateur' }, { status: 500 });
   }
 }
 
 /**
  * @swagger
- * /api/dishes/{id}:
+ * /api/users/{id}:
  *   delete:
- *     summary: Supprimer un plat et ses images sur Cloudinary (ADMIN/MANAGER seulement)
- *     tags: [Dishes]
+ *     summary: Supprimer un utilisateur (désactive) (ADMIN/MANAGER seulement)
+ *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -105,7 +103,7 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
  *           type: string
  *     responses:
  *       200:
- *         description: Plat supprimé
+ *         description: Utilisateur désactivé
  *       401:
  *         description: Authentification requise
  *       403:
@@ -115,23 +113,16 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
  */
 export async function DELETE(request: Request, segmentData: { params: Params }) {
   const authResult = await requireRole(["ADMIN", "MANAGER"]);
-  
-  if (authResult.response) {
-    return authResult.response;
-  }
-  
+  if (authResult.response) return authResult.response;
+
   try {
     const { id } = await segmentData.params;
-    // Récupérer le plat avant suppression pour obtenir les images
-    const dish = await prisma.dish.findUnique({ where: { id } });
-    if (dish) {
-      // Supprimer les images de Cloudinary
-      await deleteCloudinaryImages(dish.images);
-    }
-    // Supprimer le plat de la base de données
-    await prisma.dish.delete({ where: { id } });
-    return NextResponse.json({ succès: true });
+    const user = await prisma.user.update({
+      where: { id },
+      data: { isActive: false }
+    });
+    return NextResponse.json({ succès: true, user });
   } catch {
-    return NextResponse.json({ erreur: 'Impossible de supprimer le plat' }, { status: 500 });
+    return NextResponse.json({ erreur: 'Impossible de supprimer l\'utilisateur' }, { status: 500 });
   }
 }

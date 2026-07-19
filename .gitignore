@@ -16,11 +16,13 @@
 # misc
 .DS_Store
 *.pem
+*.md
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+cahier de charge.txt
 
 # local env files
 .env*.local
