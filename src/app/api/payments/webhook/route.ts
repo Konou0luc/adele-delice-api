@@ -1,53 +1,42 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { resolvePaymentWebhookOutcome } from '@/lib/payment-webhook';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const event = body as { type?: string; data?: { reference?: string | null } };
+    const outcome = resolvePaymentWebhookOutcome({
+      type: event.type ?? 'transaction.failed',
+      data: event.data,
+    });
 
-    // Vérifier la signature FedaPay (optionnel mais recommandé)
-    const event = body;
-
-    if (event.type === 'transaction.approved') {
-      // Paiement approuvé
-      const transactionId = event.data.id;
-      const fedaPayReference = event.data.reference;
-
-      // Trouver le paiement dans la base de données
-      const payment = await prisma.payment.findUnique({
-        where: { fedaPayReference }
-      });
-
-      if (payment) {
-        // Mettre à jour le statut du paiement
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: { status: 'SUCCESS' }
-        });
-
-        // Mettre à jour le statut de la commande
-        await prisma.order.update({
-          where: { id: payment.orderId },
-          data: { status: 'PAYMENT_CONFIRMED' }
-        });
-      }
-    } else if (event.type === 'transaction.canceled' || event.type === 'transaction.failed') {
-      // Paiement annulé ou échoué
-      const fedaPayReference = event.data.reference;
-      
-      const payment = await prisma.payment.findUnique({
-        where: { fedaPayReference }
-      });
-
-      if (payment) {
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: { status: 'FAILED' }
-        });
-      }
+    const fedaPayReference = event.data?.reference;
+    if (!fedaPayReference) {
+      return NextResponse.json({ received: true, skipped: true });
     }
 
-    return NextResponse.json({ received: true });
+    const payment = await prisma.payment.findUnique({
+      where: { fedaPayReference },
+    });
+
+    if (!payment) {
+      return NextResponse.json({ received: true, skipped: true });
+    }
+
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { status: outcome.paymentStatus },
+    });
+
+    if (outcome.orderStatus) {
+      await prisma.order.update({
+        where: { id: payment.orderId },
+        data: { status: outcome.orderStatus },
+      });
+    }
+
+    return NextResponse.json({ received: true, paymentStatus: outcome.paymentStatus });
   } catch (error) {
     console.error('Webhook error:', error);
     return NextResponse.json({ error: 'Erreur webhook' }, { status: 500 });

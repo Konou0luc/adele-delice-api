@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth, requireRole } from '@/lib/auth-helpers';
 import { OrderCreateOrderSchema } from '@/lib/validators';
+import { calculateCartTotal, normalizeCartItems } from '@/lib/cart';
 
 /**
  * @swagger
@@ -107,14 +108,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedItems = normalizeCartItems(validationResult.data.orderItems);
+    const totalAmount = calculateCartTotal(normalizedItems);
     const orderNumber = `AD${Date.now()}`;
     
     const order = await prisma.order.create({
       data: {
         ...validationResult.data,
+        totalAmount,
         orderNumber,
         orderItems: {
-          create: validationResult.data.orderItems.map(item => ({
+          create: normalizedItems.map(item => ({
             dishId: item.dishId,
             quantity: item.quantity,
             unitPrice: item.unitPrice
@@ -124,7 +128,7 @@ export async function POST(request: Request) {
       include: { orderItems: true }
     });
     
-    return NextResponse.json(order, { status: 201 });
+    return NextResponse.json({ ...order, totalAmount }, { status: 201 });
   } catch {
     return NextResponse.json({ erreur: 'Impossible de créer la commande' }, { status: 500 });
   }

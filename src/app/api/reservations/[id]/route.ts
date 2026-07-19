@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth, requireRole } from '@/lib/auth-helpers';
 
+function normalizeReservationStatus(status?: string) {
+  if (!status) return undefined;
+  const mappedStatus = status.toUpperCase();
+  if (['PENDING', 'CONFIRMED', 'RESCHEDULED', 'CANCELLED'].includes(mappedStatus)) {
+    return mappedStatus === 'CANCELLED' ? 'CANCELLED' : mappedStatus;
+  }
+  return undefined;
+}
+
 type Params = Promise<{ id: string }>;
 
 /**
@@ -75,9 +84,13 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
   try {
     const { id } = await segmentData.params;
     const body = await request.json();
+    const status = normalizeReservationStatus(body.status);
     const reservation = await prisma.reservation.update({
       where: { id },
-      data: body
+      data: {
+        ...body,
+        ...(status ? { status } : {}),
+      }
     });
     return NextResponse.json(reservation);
   } catch {
