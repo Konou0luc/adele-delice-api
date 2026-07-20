@@ -1,6 +1,11 @@
 import { createSwaggerSpec } from 'next-swagger-doc';
 
 export const getApiDocs = async () => {
+  const isDev = process.env.NODE_ENV === 'development';
+  const baseUrl = isDev 
+    ? 'http://localhost:3000' 
+    : `https://${process.env.VERCEL_URL || 'adele-delice-api.vercel.app'}`;
+    
   const spec = createSwaggerSpec({
     apiFolder: 'src/app/api',
     definition: {
@@ -12,8 +17,8 @@ export const getApiDocs = async () => {
       },
       servers: [
         {
-          url: 'http://localhost:3002',
-          description: 'Serveur de développement',
+          url: baseUrl,
+          description: isDev ? 'Serveur de développement' : 'Serveur de production',
         },
       ],
       components: {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
+import styles from './doc.module.css';
 
 export default function DocPage() {
   const [spec, setSpec] = useState<Record<string, unknown> | null>(null);
@@ -15,14 +16,14 @@ export default function DocPage() {
 
   if (!spec) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Chargement de la documentation...</p>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-xl text-black">Chargement de la documentation...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className={styles.swaggerContainer}>
       <SwaggerUI spec={spec} />
     </div>
   );
