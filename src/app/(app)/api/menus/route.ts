@@ -30,13 +30,26 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
-    
-    const where: Record<string, unknown> = { isActive: true };
+    const includeInactive = searchParams.get('includeInactive') === 'true';
+
+    const where: Record<string, unknown> = includeInactive ? {} : { isActive: true };
     if (type) where.type = type;
+
+    if (includeInactive) {
+      const authResult = await requireRole(["ADMIN", "MANAGER"]);
+      if (authResult.response) {
+        return authResult.response;
+      }
+    }
 
     const menus = await prisma.menu.findMany({
       where,
-      include: { menuItems: { include: { dish: true } } }
+      include: { menuItems: { include: { dish: true } } },
+      orderBy: [
+        { type: 'asc' },
+        { date: 'asc' },
+        { createdAt: 'desc' }
+      ]
     });
     return NextResponse.json(menus);
   } catch {

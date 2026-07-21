@@ -81,7 +81,28 @@ export async function PUT(request: Request, segmentData: { params: Params }) {
     const body = await request.json();
     const menu = await prisma.menu.update({
       where: { id },
-      data: body
+      data: {
+        name: body.name,
+        description: body.description,
+        type: body.type,
+        date: body.date ? new Date(body.date) : null,
+        dayOfWeek: body.dayOfWeek ?? null,
+        startDate: body.startDate ? new Date(body.startDate) : null,
+        endDate: body.endDate ? new Date(body.endDate) : null,
+        imageUrl: body.imageUrl,
+        isActive: body.isActive ?? true,
+        menuItems: body.menuItems
+          ? {
+              deleteMany: {},
+              create: body.menuItems.map((item: Record<string, unknown>) => ({
+                dishId: item.dishId as string,
+                price: item.price as number,
+                quantity: item.quantity as number
+              }))
+            }
+          : undefined
+      },
+      include: { menuItems: { include: { dish: true } } }
     });
     return NextResponse.json(menu);
   } catch {
