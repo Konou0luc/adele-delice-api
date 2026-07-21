@@ -14,7 +14,7 @@ export default function DocPage() {
       const { SwaggerUIBundle, SwaggerUIStandalonePreset } = module;
       SwaggerUIBundle({
         domNode: containerRef.current,
-        url: '/api/doc',
+        url: '/swagger.json',
         deepLinking: true,
         presets: [
           SwaggerUIBundle.presets.apis,

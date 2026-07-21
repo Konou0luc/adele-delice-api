@@ -8,7 +8,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "npx tsx prisma/seed.ts"
+    "seed": "npx tsx prisma/seed.ts",
+    "generate-swagger": "npx tsx generate-swagger.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

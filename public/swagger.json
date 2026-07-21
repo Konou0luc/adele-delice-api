@@ -1,0 +1,2852 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Adèle Délice",
+    "version": "1.0.0",
+    "description": "API complète pour la gestion du restaurant Adèle Délice : commandes, réservations, menus, plats, utilisateurs, promotions, paiements et plus !"
+  },
+  "servers": [
+    {
+      "url": "https://adele-delice-api.vercel.app",
+      "description": "Serveur de production"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Serveur de développement"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Role": {
+        "type": "string",
+        "enum": [
+          "ADMIN",
+          "MANAGER",
+          "EMPLOYEE"
+        ]
+      },
+      "OrderStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "PAYMENT_CONFIRMED",
+          "PREPARING",
+          "READY",
+          "DELIVERING",
+          "DELIVERED",
+          "CANCELLED"
+        ]
+      },
+      "PaymentMethod": {
+        "type": "string",
+        "enum": [
+          "YAS_MONEY",
+          "MOOV_MONEY"
+        ]
+      },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "SUCCESS",
+          "FAILED"
+        ]
+      },
+      "ReservationStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "CONFIRMED",
+          "RESCHEDULED",
+          "CANCELLED"
+        ]
+      },
+      "MenuType": {
+        "type": "string",
+        "enum": [
+          "DAILY",
+          "WEEKLY",
+          "SPECIAL"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Dish": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isAvailable": {
+            "type": "boolean"
+          },
+          "preparationTime": {
+            "type": "number"
+          },
+          "spiceLevel": {
+            "type": "number"
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isPromoted": {
+            "type": "boolean"
+          },
+          "isNew": {
+            "type": "boolean"
+          },
+          "orderCount": {
+            "type": "number"
+          },
+          "qrCodeUrl": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Menu": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/MenuType"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dayOfWeek": {
+            "type": "number"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MenuItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "menuId": {
+            "type": "string"
+          },
+          "dishId": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        }
+      },
+      "Promotion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "percentage": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "fixedAmount": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "dishId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "deliveryAddress": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "orderType": {
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "dishId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "decimal"
+          }
+        }
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "fedaPayReference": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Reservation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "numberOfPeople": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReservationStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "isApproved": {
+            "type": "boolean"
+          },
+          "dishId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GalleryItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "order": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BlogPost": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "isPublished": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SiteContent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Authentification (connexion, inscription)"
+    },
+    {
+      "name": "Users",
+      "description": "Gestion des utilisateurs (admin, manager, employé)"
+    },
+    {
+      "name": "Categories",
+      "description": "Gestion des catégories de plats"
+    },
+    {
+      "name": "Dishes",
+      "description": "Gestion des plats (création, modification, suppression)"
+    },
+    {
+      "name": "Menus",
+      "description": "Gestion des menus (quotidiens, hebdomadaires, spéciaux)"
+    },
+    {
+      "name": "MenuItems",
+      "description": "Gestion des éléments de menu (association plats-menus)"
+    },
+    {
+      "name": "Promotions",
+      "description": "Gestion des promotions et réductions"
+    },
+    {
+      "name": "Orders",
+      "description": "Gestion des commandes clients"
+    },
+    {
+      "name": "OrderItems",
+      "description": "Gestion des éléments de commande"
+    },
+    {
+      "name": "Payments",
+      "description": "Gestion des paiements (Yas Money, Moov Money)"
+    },
+    {
+      "name": "Reservations",
+      "description": "Gestion des réservations de tables"
+    },
+    {
+      "name": "Reviews",
+      "description": "Gestion des avis clients sur les plats"
+    },
+    {
+      "name": "Gallery",
+      "description": "Gestion de la galerie d'images du restaurant"
+    },
+    {
+      "name": "Blog",
+      "description": "Gestion des articles de blog"
+    },
+    {
+      "name": "SiteContent",
+      "description": "Gestion du contenu du site web"
+    },
+    {
+      "name": "Upload",
+      "description": "Upload d'images sur Cloudinary"
+    }
+  ],
+  "paths": {
+    "/api/blog-posts/{id}": {
+      "get": {
+        "summary": "Récupérer un article de blog par son ID",
+        "tags": [
+          "Blog"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Article trouvé"
+          },
+          "404": {
+            "description": "Article non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour un article de blog",
+        "tags": [
+          "Blog"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlogPost"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Article mis à jour"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer un article de blog et son image sur Cloudinary (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Blog"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Article supprimé"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/blog-posts": {
+      "get": {
+        "summary": "Récupérer les articles de blog publiés",
+        "tags": [
+          "Blog"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "all",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des articles de blog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BlogPost"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer un article de blog",
+        "tags": [
+          "Blog"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlogPost"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Article de blog créé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/categories/{id}": {
+      "get": {
+        "summary": "Récupérer une catégorie par son ID",
+        "tags": [
+          "Categories"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catégorie trouvée"
+          },
+          "404": {
+            "description": "Catégorie non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour une catégorie",
+        "tags": [
+          "Categories"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Category"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Catégorie mise à jour"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer une catégorie et son image sur Cloudinary (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catégorie supprimée"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "summary": "Récupérer toutes les catégories actives",
+        "tags": [
+          "Categories"
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des catégories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer une nouvelle catégorie (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "imageUrl": {
+                    "type": "string"
+                  },
+                  "order": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Catégorie créée"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/dishes/{id}": {
+      "get": {
+        "summary": "Récupérer un plat par son ID",
+        "tags": [
+          "Dishes"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plat trouvé"
+          },
+          "404": {
+            "description": "Plat non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour un plat (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Dishes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dish"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plat mis à jour"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer un plat et ses images sur Cloudinary (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Dishes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plat supprimé"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/dishes": {
+      "get": {
+        "summary": "Récupérer tous les plats disponibles",
+        "tags": [
+          "Dishes"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "categoryId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "isPromoted",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "isNew",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des plats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Dish"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer un nouveau plat (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Dishes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dish"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plat créé"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/gallery-items/{id}": {
+      "put": {
+        "summary": "Mettre à jour une image de la galerie",
+        "tags": [
+          "Gallery"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image mise à jour"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer une image de la galerie et son image sur Cloudinary (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image supprimée"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/gallery-items": {
+      "get": {
+        "summary": "Récupérer la galerie d'images",
+        "tags": [
+          "Gallery"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des images de la galerie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GalleryItem"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Ajouter une image à la galerie",
+        "tags": [
+          "Gallery"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Image ajoutée à la galerie"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "summary": "Se connecter avec email et mot de passe",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connexion réussie"
+          },
+          "401": {
+            "description": "Identifiants invalides"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/menu-items/{id}": {
+      "delete": {
+        "summary": "Supprimer un élément de menu",
+        "tags": [
+          "MenuItems"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Élément de menu supprimé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/menu-items": {
+      "get": {
+        "summary": "Récupérer tous les éléments de menu",
+        "tags": [
+          "MenuItems"
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des éléments de menu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MenuItem"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Ajouter un élément à un menu (ADMIN/MANAGER seulement)",
+        "tags": [
+          "MenuItems"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Élément de menu créé"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/menus/{id}": {
+      "get": {
+        "summary": "Récupérer un menu par son ID",
+        "tags": [
+          "Menus"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Menu trouvé"
+          },
+          "404": {
+            "description": "Menu non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour un menu (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Menus"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Menu"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Menu mis à jour"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer un menu et son image sur Cloudinary (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Menus"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Menu supprimé"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/menus": {
+      "get": {
+        "summary": "Récupérer tous les menus actifs",
+        "tags": [
+          "Menus"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DAILY",
+                "WEEKLY",
+                "SPECIAL"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des menus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Menu"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer un nouveau menu (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Menus"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "DAILY",
+                      "WEEKLY",
+                      "SPECIAL"
+                    ]
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "dayOfWeek": {
+                    "type": "number"
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "imageUrl": {
+                    "type": "string"
+                  },
+                  "menuItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "dishId": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "number"
+                        },
+                        "quantity": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Menu créé"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "summary": "Récupérer une commande par son ID",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commande trouvée"
+          },
+          "404": {
+            "description": "Commande non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour une commande (changer son statut, etc.) (authentifié seulement)",
+        "tags": [
+          "Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Order"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Commande mise à jour"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "summary": "Récupérer toutes les commandes ou une commande par son numéro (authentifié seulement)",
+        "tags": [
+          "Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "orderNumber",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des commandes ou commande unique"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "404": {
+            "description": "Commande non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer une nouvelle commande",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customerName": {
+                    "type": "string"
+                  },
+                  "customerPhone": {
+                    "type": "string"
+                  },
+                  "deliveryAddress": {
+                    "type": "string"
+                  },
+                  "comment": {
+                    "type": "string"
+                  },
+                  "orderType": {
+                    "type": "string"
+                  },
+                  "totalAmount": {
+                    "type": "number"
+                  },
+                  "orderItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "dishId": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "type": "number"
+                        },
+                        "unitPrice": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Commande créée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/payments/{id}": {
+      "get": {
+        "summary": "Récupérer un paiement par son ID",
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paiement trouvé"
+          },
+          "404": {
+            "description": "Paiement non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour le statut d'un paiement (authentifié seulement)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "SUCCESS",
+                      "FAILED"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Paiement mis à jour"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/payments": {
+      "get": {
+        "summary": "Récupérer tous les paiements",
+        "tags": [
+          "Payments"
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des paiements",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Payment"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Enregistrer un paiement (authentifié seulement)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "orderId": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "YAS_MONEY",
+                      "MOOV_MONEY"
+                    ]
+                  },
+                  "fedaPayReference": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Paiement enregistré"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/promotions/{id}": {
+      "get": {
+        "summary": "Récupérer une promotion par son ID",
+        "tags": [
+          "Promotions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Promotion trouvée"
+          },
+          "404": {
+            "description": "Promotion non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour une promotion",
+        "tags": [
+          "Promotions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Promotion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Promotion mise à jour"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer une promotion (désactive) (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Promotions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Promotion désactivée"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/promotions": {
+      "get": {
+        "summary": "Récupérer toutes les promotions actives",
+        "tags": [
+          "Promotions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des promotions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Promotion"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer une nouvelle promotion",
+        "tags": [
+          "Promotions"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Promotion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Promotion créée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/register": {
+      "post": {
+        "summary": "Créer un nouveau compte utilisateur",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé avec succès"
+          },
+          "400": {
+            "description": "Email déjà utilisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/reservations/{id}": {
+      "get": {
+        "summary": "Récupérer une réservation par son ID",
+        "tags": [
+          "Reservations"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Réservation trouvée"
+          },
+          "404": {
+            "description": "Réservation non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour une réservation (confirmer, modifier, etc.) (authentifié seulement)",
+        "tags": [
+          "Reservations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reservation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Réservation mise à jour"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer une réservation (authentifié seulement)",
+        "tags": [
+          "Reservations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Réservation supprimée"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/reservations": {
+      "get": {
+        "summary": "Récupérer toutes les réservations",
+        "tags": [
+          "Reservations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des réservations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reservation"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer une nouvelle réservation",
+        "tags": [
+          "Reservations"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customerName": {
+                    "type": "string"
+                  },
+                  "customerPhone": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "numberOfPeople": {
+                    "type": "number"
+                  },
+                  "comment": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Réservation créée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}": {
+      "put": {
+        "summary": "Approuver ou rejeter un avis",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "isApproved": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avis mis à jour"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer un avis (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avis supprimé"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "get": {
+        "summary": "Récupérer les avis approuvés",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dishId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "all",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Review"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Soumettre un nouvel avis",
+        "tags": [
+          "Reviews"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "rating": {
+                    "type": "number"
+                  },
+                  "comment": {
+                    "type": "string"
+                  },
+                  "dishId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Avis soumis (en attente d'approbation)"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/site-contents": {
+      "get": {
+        "summary": "Récupérer le contenu du site",
+        "tags": [
+          "SiteContent"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "key",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contenu du site",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SiteContent"
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteContent"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Clé non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Ajouter ou mettre à jour du contenu du site",
+        "tags": [
+          "SiteContent"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteContent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contenu créé ou mis à jour"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "summary": "Uploader une image sur Cloudinary (ADMIN/MANAGER/EMPLOYEE seulement)",
+        "tags": [
+          "Upload"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image uploadée avec succès"
+          },
+          "400": {
+            "description": "Aucun fichier fourni"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer une image de Cloudinary (ADMIN/MANAGER/EMPLOYEE seulement)",
+        "tags": [
+          "Upload"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "publicId": {
+                    "type": "string",
+                    "description": "Public ID de l'image Cloudinary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image supprimée avec succès"
+          },
+          "400": {
+            "description": "Aucun public ID fourni"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "summary": "Récupérer un utilisateur par son ID",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Utilisateur trouvé"
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour un utilisateur (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Utilisateur mis à jour"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer un utilisateur (désactive) (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Utilisateur désactivé"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "summary": "Récupérer tous les utilisateurs actifs (ADMIN/MANAGER seulement)",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des utilisateurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer un nouvel utilisateur (ADMIN seulement)",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "ADMIN",
+                      "MANAGER",
+                      "EMPLOYEE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    }
+  }
+}
