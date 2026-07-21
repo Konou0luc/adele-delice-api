@@ -4,3 +4,8 @@
   background-color: white;
 }
 
+.swaggerContainer :global(.swagger-ui) {
+  all: revert;
+  width: 100%;
+}
+
