@@ -39,7 +39,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        return user;
+        // Convert Prisma user to NextAuth user (replace null with empty strings)
+        return {
+          id: user.id,
+          role: user.role,
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          email: user.email,
+          password: user.password,
+          name: user.name,
+          emailVerified: user.emailVerified,
+          phone: user.phone,
+          isActive: user.isActive,
+          image: user.image,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        };
       },
     }),
   ],
@@ -58,16 +73,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email: user.email },
           update: {
             // Mettre à jour si besoin
-            firstName: profile?.given_name || user.firstName || "",
-            lastName: profile?.family_name || user.lastName || "",
-            image: profile?.picture || user.image,
+            firstName: profile?.given_name || "",
+            lastName: profile?.family_name || "",
+            image: profile?.picture || null,
           },
           create: {
             email: user.email,
-            name: user.name || "",
+            name: user.name || null,
             firstName: profile?.given_name || "",
             lastName: profile?.family_name || "",
-            image: profile?.picture || "",
+            image: profile?.picture || null,
             role: "EMPLOYEE", // Rôle par défaut pour les nouveaux utilisateurs Google
           },
         });
@@ -78,8 +93,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.firstName = user.firstName;
-        token.lastName = user.lastName;
+        token.firstName = user.firstName || "";
+        token.lastName = user.lastName || "";
       }
       
       // Si c'est une connexion Google, on met à jour le token avec les infos du profil
@@ -90,8 +105,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
-          token.firstName = dbUser.firstName;
-          token.lastName = dbUser.lastName;
+          token.firstName = dbUser.firstName || "";
+          token.lastName = dbUser.lastName || "";
         }
       }
       
