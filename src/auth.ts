@@ -43,27 +43,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.AUTH_SECRET,
+  pages: {
+    signIn: "/login",
+  },
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "google") {
-        // Si c'est une nouvelle connexion Google, on peut définir un rôle par défaut
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email! },
+      if (account?.provider === "google" && user.email) {
+        // Assurez-vous que l'utilisateur a un rôle et les champs prénom/nom
+        await prisma.user.upsert({
+          where: { email: user.email },
+          update: {
+            // Mettre à jour si besoin
+            firstName: profile?.given_name || user.firstName || "",
+            lastName: profile?.family_name || user.lastName || "",
+            image: profile?.picture || user.image,
+          },
+          create: {
+            email: user.email,
+            name: user.name || "",
+            firstName: profile?.given_name || "",
+            lastName: profile?.family_name || "",
+            image: profile?.picture || "",
+            role: "EMPLOYEE", // Rôle par défaut pour les nouveaux utilisateurs Google
+          },
         });
-        
-        if (!existingUser) {
-          // Pour les nouveaux utilisateurs Google, on peut assigner un rôle par défaut
-          // Ici, on met EMPLOYEE, mais tu peux changer selon tes besoins
-          await prisma.user.update({
-            where: { email: user.email! },
-            data: {
-              role: "EMPLOYEE",
-              // Si le profil Google a un nom, on split en prénom et nom
-              firstName: profile?.given_name || "",
-              lastName: profile?.family_name || "",
-            },
-          });
-        }
       }
       return true;
     },
@@ -88,23 +95,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
       
-      return token;
-    },
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.AUTH_SECRET,
-  pages: {
-    signIn: "/login",
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.firstName = user.firstName;
-        token.lastName = user.lastName;
-      }
       return token;
     },
     async session({ session, token }) {
