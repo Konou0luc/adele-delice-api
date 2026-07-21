@@ -1,40 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import SwaggerUI from 'swagger-ui-react';
-import 'swagger-ui-react/swagger-ui.css';
+import { useEffect, useRef } from 'react';
+import 'swagger-ui-dist/swagger-ui.css';
 
 export default function DocPage() {
-  const [spec, setSpec] = useState<Record<string, unknown> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch('/api/doc')
-      .then((res) => res.json())
-      .then((data) => setSpec(data));
+    if (!containerRef.current) return;
+
+    // Dynamically import SwaggerUI bundle
+    import('swagger-ui-dist').then((module) => {
+      const { SwaggerUIBundle, SwaggerUIStandalonePreset } = module;
+      SwaggerUIBundle({
+        domNode: containerRef.current,
+        url: '/api/doc',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset,
+        ],
+        layout: 'StandaloneLayout',
+      });
+    });
   }, []);
 
-  if (!spec) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white' }}>
-        <p style={{ fontSize: '1.25rem', color: 'black' }}>Chargement de la documentation...</p>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ width: '100%', minHeight: '100vh' }}>
-      <style>{`
-        /* Reset Tailwind preflight styles for Swagger UI */
-        .swagger-ui,
-        .swagger-ui * {
-          all: revert !important;
-          box-sizing: border-box !important;
-        }
-        .swagger-ui {
-          width: 100% !important;
-        }
-      `}</style>
-      <SwaggerUI spec={spec} />
-    </div>
-  );
+  return <div ref={containerRef} style={{ width: '100%', minHeight: '100vh' }} />;
 }
