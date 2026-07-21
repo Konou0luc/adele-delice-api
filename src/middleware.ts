@@ -1,45 +1,63 @@
-// Minimal NextAuth config for Edge Runtime (no Prisma)
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
+import { NextRequest, NextResponse } from "next/server";
 
-const { auth } = NextAuth({
-  providers: [
-    Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Mot de passe", type: "password" },
-      },
-      async authorize() {
-        // Authorization handled in main auth config, not middleware
-        return null;
-      },
-    }),
-  ],
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.AUTH_SECRET,
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.firstName = user.firstName;
-        token.lastName = user.lastName;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.firstName = token.firstName as string;
-        session.user.lastName = token.lastName as string;
-      }
-      return session;
-    },
-  },
-});
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.FRONTEND_URL!,
+].filter(Boolean);
 
-export const middleware = auth;
-export default auth;
+export function middleware(request: NextRequest) {
+  const origin = request.headers.get("origin");
+
+  // Préflight
+  if (request.method === "OPTIONS") {
+    const response = new NextResponse(null, { status: 204 });
+
+    if (origin && allowedOrigins.includes(origin)) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+    }
+
+    response.headers.set(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    );
+
+    response.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
+
+    response.headers.set(
+      "Access-Control-Allow-Credentials",
+      "true"
+    );
+
+    return response;
+  }
+
+  const response = NextResponse.next();
+
+  if (origin && allowedOrigins.includes(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+  }
+
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+  );
+
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+
+  response.headers.set(
+    "Access-Control-Allow-Credentials",
+    "true"
+  );
+
+  return response;
+}
+
+export const config = {
+  matcher: ["/api/:path*"],
+};
