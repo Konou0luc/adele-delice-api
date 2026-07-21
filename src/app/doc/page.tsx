@@ -22,7 +22,18 @@ export default function DocPage() {
   }
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', backgroundColor: 'white' }}>
+    <div style={{ width: '100%', minHeight: '100vh' }}>
+      <style>{`
+        /* Reset Tailwind preflight styles for Swagger UI */
+        .swagger-ui,
+        .swagger-ui * {
+          all: revert !important;
+          box-sizing: border-box !important;
+        }
+        .swagger-ui {
+          width: 100% !important;
+        }
+      `}</style>
       <SwaggerUI spec={spec} />
     </div>
   );
