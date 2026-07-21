@@ -7,7 +7,7 @@ export const getApiDocs = async () => {
     : `https://${process.env.VERCEL_URL || 'adele-delice-api.vercel.app'}`;
     
   const spec = createSwaggerSpec({
-    apiFolder: 'src/app/api',
+    apiFolder: 'src/app/(app)/api',
     definition: {
       openapi: '3.0.0',
       info: {
