@@ -22,7 +22,7 @@ import { Transaction } from '@/lib/fedapay';
  *         description: Erreur serveur
  */
 export async function GET() {
-  const authResult = await requireRole(["ADMIN", "MANAGER", "EMPLOYEE"]);
+  const authResult = await requireRole(['ADMIN', 'MANAGER', 'EMPLOYEE']);
   if (authResult.response) return authResult.response;
   
   try {
@@ -70,14 +70,16 @@ export async function GET() {
  *         description: Erreur serveur
  */
 export async function POST(request: Request) {
-  // Cette route peut être appelée par les clients pour initier un paiement
   const authResult = await requireAuth();
+
+  if (authResult.response) {
+    return authResult.response;
+  }
   
   try {
     const body = await request.json();
     const { orderId, amount, method } = body;
 
-    // Vérifier que la commande existe
     const order = await prisma.order.findUnique({
       where: { id: orderId }
     });
@@ -86,21 +88,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ erreur: 'Commande introuvable' }, { status: 404 });
     }
 
-    // Créer une transaction FedaPay
     const transaction = await Transaction.create({
       description: `Paiement pour commande ${order.orderNumber}`,
       amount: amount,
       currency: { iso: 'XOF' },
       callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/webhook`,
       customer: {
-        firstname: 'Client',
-        lastname: order.customerName,
-        email: `client@example.com`,
+        firstname: authResult.session.user.firstName || 'Client',
+        lastname: authResult.session.user.lastName || order.customerName,
+        email: authResult.session.user.email,
         phone_number: order.customerPhone
       }
     });
 
-    // Créer le paiement dans la base de données
     const payment = await prisma.payment.create({
       data: {
         orderId,
@@ -111,7 +111,6 @@ export async function POST(request: Request) {
       }
     });
 
-    // Retourner la transaction avec l'URL de paiement
     return NextResponse.json({
       payment,
       paymentUrl: transaction.url

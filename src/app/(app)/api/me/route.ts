@@ -14,6 +14,25 @@ async function findCurrentUser(user: { id: string; email: string }) {
   });
 }
 
+function buildFallbackUser(session: {
+  user: { id: string; email: string; firstName?: string | null; lastName?: string | null; image?: string | null; role?: string | null };
+  expires: string;
+}) {
+  return {
+    id: session.user.id,
+    email: session.user.email,
+    name: buildName(session.user.firstName, session.user.lastName),
+    firstName: session.user.firstName,
+    lastName: session.user.lastName,
+    phone: null,
+    image: session.user.image ?? null,
+    role: session.user.role ?? 'EMPLOYEE',
+    isActive: true,
+    createdAt: session.expires,
+    updatedAt: session.expires,
+  };
+}
+
 export async function GET() {
   const authResult = await requireAuth();
 
@@ -31,7 +50,7 @@ export async function GET() {
     const user = await findCurrentUser(session.user);
 
     if (!user) {
-      return NextResponse.json({ erreur: 'Utilisateur introuvable' }, { status: 404 });
+      return NextResponse.json(buildFallbackUser(session));
     }
 
     return NextResponse.json(user);
@@ -56,23 +75,33 @@ export async function PATCH(request: Request) {
   try {
     const currentUser = await findCurrentUser(session.user);
 
-    if (!currentUser) {
-      return NextResponse.json({ erreur: 'Utilisateur introuvable' }, { status: 404 });
-    }
-
     const body = await request.json();
     const firstName = typeof body.firstName === 'string' ? body.firstName.trim() : undefined;
     const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : undefined;
     const phone = typeof body.phone === 'string' ? body.phone.trim() : undefined;
 
-    const user = await prisma.user.update({
-      where: { id: currentUser.id },
-      data: {
+    const user = await prisma.user.upsert({
+      where: { email: session.user.email },
+      create: {
+        id: currentUser?.id ?? session.user.id,
+        email: session.user.email,
+        firstName: firstName ?? currentUser?.firstName ?? session.user.firstName,
+        lastName: lastName ?? currentUser?.lastName ?? session.user.lastName,
+        phone: phone ?? currentUser?.phone ?? undefined,
+        name: buildName(
+          firstName ?? currentUser?.firstName ?? session.user.firstName,
+          lastName ?? currentUser?.lastName ?? session.user.lastName
+        ),
+        role: (session.user.role ?? 'EMPLOYEE') as any,
+        isActive: true,
+        image: currentUser?.image ?? undefined,
+      },
+      update: {
         ...(firstName !== undefined ? { firstName } : {}),
         ...(lastName !== undefined ? { lastName } : {}),
         ...(phone !== undefined ? { phone } : {}),
         ...(firstName !== undefined || lastName !== undefined
-          ? { name: buildName(firstName ?? currentUser.firstName, lastName ?? currentUser.lastName) }
+          ? { name: buildName(firstName ?? currentUser?.firstName, lastName ?? currentUser?.lastName) }
           : {}),
       },
     });
