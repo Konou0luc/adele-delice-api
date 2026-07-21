@@ -14,7 +14,7 @@ async function generateSwagger() {
       },
       servers: [
         {
-          url: 'https://adele-delice-api.vercel.app',
+          url: 'https://adele-delice-api-yd1m.vercel.app',
           description: 'Serveur de production',
         },
         {
