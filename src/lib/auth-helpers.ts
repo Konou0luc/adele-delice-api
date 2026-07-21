@@ -1,19 +1,64 @@
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
+import { verifyApiToken } from "@/lib/api-token";
 
 type Role = "ADMIN" | "MANAGER" | "EMPLOYEE";
+
+type AuthenticatedSession = Session & {
+  user: Session["user"] & {
+    id: string;
+    role: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+};
+
+async function getBearerToken() {
+  const headerStore = await headers();
+  const authorization = headerStore.get("authorization");
+
+  if (!authorization?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  return authorization.slice("Bearer ".length).trim();
+}
 
 /**
  * Vérifie si l'utilisateur est connecté
  */
 export async function requireAuth(): Promise<{
-  session: Session;
+  session: AuthenticatedSession;
   response: null;
 } | {
   session: null;
   response: NextResponse;
 }> {
+  const bearerToken = await getBearerToken();
+
+  if (bearerToken) {
+    const payload = verifyApiToken(bearerToken);
+
+    if (payload) {
+      return {
+        session: {
+          user: {
+            id: payload.sub,
+            role: payload.role,
+            firstName: payload.firstName,
+            lastName: payload.lastName,
+            email: payload.email,
+          },
+          expires: new Date(payload.exp * 1000).toISOString(),
+        },
+        response: null,
+      };
+    }
+  }
+
   const session = await auth();
   
   if (!session || !session.user) {
@@ -26,7 +71,7 @@ export async function requireAuth(): Promise<{
     };
   }
   
-  return { session, response: null };
+  return { session: session as AuthenticatedSession, response: null };
 }
 
 /**

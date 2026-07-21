@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signIn } from '@/auth';
+import { createApiToken } from '@/lib/api-token';
 
 /**
  * @swagger
@@ -54,7 +55,25 @@ export async function POST(request: Request) {
       redirect: false,
     });
 
-    return NextResponse.json({ ...result, user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role } });
+    const token = createApiToken({
+      sub: user.id,
+      role: user.role,
+      email: user.email,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+    });
+
+    return NextResponse.json({
+      ...result,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      },
+    });
   } catch {
     return NextResponse.json({ erreur: 'Erreur lors de la connexion' }, { status: 500 });
   }
