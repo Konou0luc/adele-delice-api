@@ -3,6 +3,17 @@ import prisma from '@/lib/prisma';
 import { requireAuth, requireRole } from '@/lib/auth-helpers';
 import { Transaction } from '@/lib/fedapay';
 
+function resolveWebhookUrl(request: Request) {
+  const baseUrl =
+    new URL(request.url).origin ||
+    process.env.NEXTAUTH_URL ||
+    process.env.FRONTEND_URL;
+
+  const resolvedBaseUrl = baseUrl ?? 'http://localhost:3000';
+
+  return `${resolvedBaseUrl.replace(/\/$/, '')}/api/payments/webhook`;
+}
+
 /**
  * @swagger
  * /api/payments:
@@ -80,6 +91,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { orderId, amount, method } = body;
 
+    const parsedAmount = Number(amount);
+    if (!orderId || !Number.isFinite(parsedAmount) || parsedAmount <= 0 || !['YAS_MONEY', 'MOOV_MONEY'].includes(method)) {
+      return NextResponse.json(
+        { erreur: 'Données de paiement invalides' },
+        { status: 400 }
+      );
+    }
+
     const order = await prisma.order.findUnique({
       where: { id: orderId }
     });
@@ -88,23 +107,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ erreur: 'Commande introuvable' }, { status: 404 });
     }
 
+    const customerPhone = String(order.customerPhone ?? '').replace(/\D/g, '');
+    const callbackUrl = resolveWebhookUrl(request);
+
+    if (!process.env.FEDAPAY_SECRET_KEY) {
+      return NextResponse.json(
+        { erreur: 'Configuration FedaPay manquante' },
+        { status: 500 }
+      );
+    }
+
     const transaction = await Transaction.create({
       description: `Paiement pour commande ${order.orderNumber}`,
-      amount: amount,
+      amount: parsedAmount,
       currency: { iso: 'XOF' },
-      callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/webhook`,
+      callback_url: callbackUrl,
       customer: {
         firstname: authResult.session.user.firstName || 'Client',
         lastname: authResult.session.user.lastName || order.customerName,
         email: authResult.session.user.email,
-        phone_number: order.customerPhone
+        phone_number: customerPhone || undefined
       }
     });
 
     const payment = await prisma.payment.create({
       data: {
         orderId,
-        amount,
+        amount: parsedAmount,
         method,
         fedaPayReference: transaction.reference,
         status: 'PENDING'
@@ -117,6 +146,10 @@ export async function POST(request: Request) {
     }, { status: 201 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ erreur: 'Impossible de créer le paiement' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Impossible de créer le paiement';
+    return NextResponse.json(
+      { erreur: 'Impossible de créer le paiement', details: message },
+      { status: 500 }
+    );
   }
 }
