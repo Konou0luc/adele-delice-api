@@ -1,5 +1,18 @@
 import { z } from 'zod';
 
+const fcfaAmount = (message: string) =>
+  z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) {
+        return value;
+      }
+
+      const numericValue = Number(value);
+      return Number.isFinite(numericValue) ? Math.round(numericValue) : value;
+    },
+    z.number().int().positive(message)
+  );
+
 // Schéma pour les utilisateurs
 export const UserCreateUserSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -39,7 +52,7 @@ export const CategoryUpdateCategorySchema = z.object({
 export const DishCreateDishSchema = z.object({
   name: z.string().min(1, 'Nom requis'),
   description: z.string().optional(),
-  price: z.number().positive('Prix invalide'),
+  price: fcfaAmount('Prix invalide'),
   categoryId: z.string().min(1, 'Catégorie requise'),
   images: z.array(z.string()).optional(),
   isAvailable: z.boolean().optional(),
@@ -53,7 +66,7 @@ export const DishCreateDishSchema = z.object({
 export const DishUpdateDishSchema = z.object({
   name: z.string().min(1, 'Nom requis').optional(),
   description: z.string().optional(),
-  price: z.number().positive('Prix invalide').optional(),
+  price: fcfaAmount('Prix invalide').optional(),
   categoryId: z.string().min(1, 'Catégorie requise').optional(),
   images: z.array(z.string()).optional(),
   isAvailable: z.boolean().optional(),
@@ -71,11 +84,11 @@ export const OrderCreateOrderSchema = z.object({
   deliveryAddress: z.string().optional(),
   comment: z.string().optional(),
   orderType: z.string().optional(),
-  totalAmount: z.number().positive('Montant total invalide'),
+  totalAmount: fcfaAmount('Montant total invalide'),
   orderItems: z.array(z.object({
     dishId: z.string().min(1, 'Plat requis'),
     quantity: z.number().int().positive('Quantité invalide'),
-    unitPrice: z.number().positive('Prix unitaire invalide')
+    unitPrice: fcfaAmount('Prix unitaire invalide')
   }))
 });
 
@@ -91,7 +104,7 @@ export const OrderUpdateOrderSchema = z.object({
 // Schéma pour les paiements
 export const PaymentCreatePaymentSchema = z.object({
   orderId: z.string().min(1, 'Commande requise'),
-  amount: z.number().positive('Montant invalide'),
+  amount: fcfaAmount('Montant invalide'),
   method: z.enum(['YAS_MONEY', 'MOOV_MONEY'])
 });
 

@@ -77,21 +77,18 @@ function buildFedapayPhoneNumber(phoneValue: string) {
   };
 }
 
-async function createFedapayCustomer(params: {
-  firstname: string;
-  lastname: string;
-  email: string;
-  phone_number: { number: string; country: string } | null;
-}) {
+async function findFedapayCustomerByEmail(email: string) {
   try {
-    return await Customer.create({
-      firstname: params.firstname,
-      lastname: params.lastname,
-      email: params.email,
-      ...(params.phone_number ? { phone_number: params.phone_number } : {}),
-    });
+    const customers = await Customer.all();
+    const list = Array.isArray((customers as any)?.customers)
+      ? (customers as any).customers
+      : Array.isArray(customers)
+        ? customers
+        : [];
+
+    return list.find((customer: any) => customer?.email === email) || null;
   } catch (error) {
-    console.warn('FedaPay customer creation skipped:', error);
+    console.warn('FedaPay customer lookup skipped:', error);
     return null;
   }
 }
@@ -199,17 +196,16 @@ export async function POST(request: Request) {
     const callbackUrl = resolveWebhookUrl(request);
     const fedapayMode = FEDAPAY_MODE_BY_METHOD[method];
     const customerEmail = authResult.session.user.email;
+    const fedapayAmount = Math.max(1, Math.round(parsedAmount));
+    const fedapayPhone = phoneNumber
+      ? { number: `+${phoneNumber.number}`, country: phoneNumber.country }
+      : null;
 
-    const fedapayCustomer = await createFedapayCustomer({
-      firstname: customerName.firstname,
-      lastname: authResult.session.user.lastName || customerName.lastname,
-      email: customerEmail,
-      phone_number: phoneNumber,
-    });
+    const fedapayCustomer = await findFedapayCustomerByEmail(customerEmail);
 
     const transaction = await Transaction.create({
       description: `Paiement pour commande ${order.orderNumber}`,
-      amount: parsedAmount,
+      amount: fedapayAmount,
       currency: { iso: 'XOF' },
       callback_url: callbackUrl,
       mode: fedapayMode,
@@ -219,19 +215,19 @@ export async function POST(request: Request) {
             firstname: customerName.firstname,
             lastname: authResult.session.user.lastName || customerName.lastname,
             email: customerEmail,
-            ...(phoneNumber ? { phone_number: phoneNumber } : {}),
+            ...(fedapayPhone ? { phone_number: fedapayPhone } : {}),
           },
     });
 
     const tokenObject = await transaction.generateToken();
 
-    const sendPayload = phoneNumber ? { phone_number: phoneNumber } : {};
+    const sendPayload = fedapayPhone ? { phone_number: fedapayPhone } : {};
     const fedapayResponse = await transaction.sendNowWithToken(fedapayMode, tokenObject.token, sendPayload);
 
     const payment = await prisma.payment.create({
       data: {
         orderId,
-        amount: parsedAmount,
+        amount: fedapayAmount,
         method,
         fedaPayReference: transaction.reference,
         status: 'PENDING',

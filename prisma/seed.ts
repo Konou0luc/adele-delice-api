@@ -86,7 +86,7 @@ async function main() {
     data: {
       name: 'Salade César',
       description: 'Salade verte avec poulet grillé et parmesan',
-      price: 12.99,
+      price: 13,
       categoryId: starters.id,
       images: ['https://images.unsplash.com/photo-1546793665-c74683f339c1?w=800'],
       isAvailable: true,
@@ -101,7 +101,7 @@ async function main() {
     data: {
       name: 'Soupe à l\'oignon',
       description: 'Soupe gratinée au fromage',
-      price: 9.99,
+      price: 10,
       categoryId: starters.id,
       images: ['https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800'],
       isAvailable: true,
@@ -116,7 +116,7 @@ async function main() {
     data: {
       name: 'Steak Frites',
       description: 'Steak de boeuf avec frites maison',
-      price: 24.99,
+      price: 25,
       categoryId: mains.id,
       images: ['https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800'],
       isAvailable: true,
@@ -131,7 +131,7 @@ async function main() {
     data: {
       name: 'Pâtes Carbonara',
       description: 'Pâtes avec crème, lardons et parmesan',
-      price: 18.99,
+      price: 19,
       categoryId: mains.id,
       images: ['https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800'],
       isAvailable: true,
@@ -146,7 +146,7 @@ async function main() {
     data: {
       name: 'Tiramisu',
       description: 'Tiramisu italien aux café',
-      price: 8.99,
+      price: 9,
       categoryId: desserts.id,
       images: ['https://images.unsplash.com/photo-1571877227200-a0d1e3305643?w=800'],
       isAvailable: true,
@@ -161,7 +161,7 @@ async function main() {
     data: {
       name: 'Crème Brûlée',
       description: 'Crème vanillée avec sucre caramélisé',
-      price: 7.99,
+      price: 8,
       categoryId: desserts.id,
       images: ['https://images.unsplash.com/photo-1587440871875-191322e47ae3?w=800'],
       isAvailable: true,
@@ -176,7 +176,7 @@ async function main() {
     data: {
       name: 'Eau Plate',
       description: 'Bouteille d\'eau 50cl',
-      price: 2.99,
+      price: 3,
       categoryId: drinks.id,
       images: [],
       isAvailable: true,
@@ -190,7 +190,7 @@ async function main() {
     data: {
       name: 'Coca-Cola',
       description: 'Canette 33cl',
-      price: 3.99,
+      price: 4,
       categoryId: drinks.id,
       images: [],
       isAvailable: true,
@@ -210,9 +210,9 @@ async function main() {
       isActive: true,
       menuItems: {
         create: [
-          { dishId: salad.id, price: 10.99, quantity: 1 },
-          { dishId: steak.id, price: 22.99, quantity: 1 },
-          { dishId: tiramisu.id, price: 7.99, quantity: 1 },
+          { dishId: salad.id, price: 11, quantity: 1 },
+          { dishId: steak.id, price: 23, quantity: 1 },
+          { dishId: tiramisu.id, price: 8, quantity: 1 },
         ],
       },
     },
@@ -228,9 +228,9 @@ async function main() {
       isActive: true,
       menuItems: {
         create: [
-          { dishId: soup.id, price: 8.99, quantity: 2 },
-          { dishId: pasta.id, price: 16.99, quantity: 2 },
-          { dishId: cremeBrulee.id, price: 6.99, quantity: 2 },
+          { dishId: soup.id, price: 9, quantity: 2 },
+          { dishId: pasta.id, price: 17, quantity: 2 },
+          { dishId: cremeBrulee.id, price: 7, quantity: 2 },
         ],
       },
     },
