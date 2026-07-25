@@ -2,9 +2,8 @@ import { createSwaggerSpec } from 'next-swagger-doc';
 
 export const getApiDocs = async () => {
   const isDev = process.env.NODE_ENV === 'development';
-  const baseUrl = isDev 
-    ? 'http://localhost:3000' 
-    : `https://${process.env.VERCEL_URL || 'adele-delice-api.vercel.app'}`;
+  const vercelUrl = process.env.VERCEL_URL ?? 'adele-delice-api.vercel.app';
+  const baseUrl = isDev ? 'http://localhost:3000' : `https://${vercelUrl}`;
     
   const spec = createSwaggerSpec({
     apiFolder: 'src/app/(app)/api',
@@ -88,7 +87,7 @@ export const getApiDocs = async () => {
               id: { type: 'string' },
               name: { type: 'string' },
               description: { type: 'string' },
-              price: { type: 'number', format: 'decimal' },
+              price: { type: 'integer' },
               categoryId: { type: 'string' },
               images: { type: 'array', items: { type: 'string' } },
               isAvailable: { type: 'boolean' },
@@ -126,7 +125,7 @@ export const getApiDocs = async () => {
               id: { type: 'string' },
               menuId: { type: 'string' },
               dishId: { type: 'string' },
-              price: { type: 'number', format: 'decimal' },
+              price: { type: 'integer' },
               quantity: { type: 'number' },
             },
           },
@@ -137,7 +136,7 @@ export const getApiDocs = async () => {
               name: { type: 'string' },
               description: { type: 'string' },
               percentage: { type: 'number', format: 'decimal' },
-              fixedAmount: { type: 'number', format: 'decimal' },
+              fixedAmount: { type: 'integer' },
               startDate: { type: 'string', format: 'date-time' },
               endDate: { type: 'string', format: 'date-time' },
               isActive: { type: 'boolean' },
@@ -156,7 +155,7 @@ export const getApiDocs = async () => {
               deliveryAddress: { type: 'string' },
               comment: { type: 'string' },
               orderType: { type: 'string' },
-              totalAmount: { type: 'number', format: 'decimal' },
+              totalAmount: { type: 'integer' },
               status: { $ref: '#/components/schemas/OrderStatus' },
               createdAt: { type: 'string', format: 'date-time' },
               updatedAt: { type: 'string', format: 'date-time' },
@@ -169,7 +168,7 @@ export const getApiDocs = async () => {
               orderId: { type: 'string' },
               dishId: { type: 'string' },
               quantity: { type: 'number' },
-              unitPrice: { type: 'number', format: 'decimal' },
+              unitPrice: { type: 'integer' },
             },
           },
           Payment: {
@@ -177,7 +176,7 @@ export const getApiDocs = async () => {
             properties: {
               id: { type: 'string' },
               orderId: { type: 'string' },
-              amount: { type: 'number', format: 'decimal' },
+              amount: { type: 'integer' },
               method: { $ref: '#/components/schemas/PaymentMethod' },
               status: { $ref: '#/components/schemas/PaymentStatus' },
               fedaPayReference: { type: 'string' },
