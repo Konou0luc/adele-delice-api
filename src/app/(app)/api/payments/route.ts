@@ -252,10 +252,36 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error(error);
+    console.error('Payment creation error:', error);
+    const fedapayDetails =
+      error && typeof error === 'object' && 'httpResponse' in error
+        ? (() => {
+            const response = (error as { httpResponse?: { data?: unknown } }).httpResponse;
+            const data = response?.data;
+            if (data && typeof data === 'object') {
+              const typedData = data as {
+                message?: string;
+                errorMessage?: string;
+                errors?: unknown;
+              };
+              return (
+                typedData.errorMessage ||
+                typedData.message ||
+                (typedData.errors ? JSON.stringify(typedData.errors) : '') ||
+                JSON.stringify(data)
+              );
+            }
+            return '';
+          })()
+        : '';
+    const sdkDetails =
+      error && typeof error === 'object'
+        ? (error as { errorMessage?: string; errors?: unknown }).errorMessage ||
+          ((error as { errors?: unknown }).errors ? JSON.stringify((error as { errors?: unknown }).errors) : '')
+        : '';
     const message = error instanceof Error ? error.message : 'Impossible de créer le paiement';
     return NextResponse.json(
-      { erreur: 'Impossible de créer le paiement', details: message },
+      { erreur: 'Impossible de créer le paiement', details: fedapayDetails || sdkDetails || message },
       { status: 500 }
     );
   }
