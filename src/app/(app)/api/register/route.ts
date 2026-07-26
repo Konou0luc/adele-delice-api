@@ -47,6 +47,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ erreur: 'Email déjà utilisé' }, { status: 400 });
     }
 
+    const normalizedPhone = typeof phone === 'string' ? phone.replace(/\s+/g, '').trim() : phone;
+
+    if (phone && !/^\+228\d{8}$/.test(normalizedPhone)) {
+      return NextResponse.json(
+        {
+          erreur: 'Le numéro de téléphone doit être togolais et respecter le format +228XXXXXXXX.',
+        },
+        { status: 400 }
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
@@ -55,7 +66,7 @@ export async function POST(request: Request) {
         password: hashedPassword,
         firstName,
         lastName,
-        phone,
+        phone: normalizedPhone,
         name: `${firstName} ${lastName}`,
       },
     });

@@ -6,6 +6,19 @@ function buildName(firstName?: string | null, lastName?: string | null) {
   return `${firstName ?? ''} ${lastName ?? ''}`.trim() || null;
 }
 
+function normalizePhone(phone?: string | null) {
+  return phone?.replace(/\s+/g, '').trim() || null;
+}
+
+function isValidTogolesePhone(phone?: string | null) {
+  if (!phone) {
+    return false;
+  }
+
+  const normalized = normalizePhone(phone);
+  return typeof normalized === 'string' && /^\+228\d{8}$/.test(normalized);
+}
+
 async function findCurrentUser(user: { id: string; email: string }) {
   return prisma.user.findFirst({
     where: {
@@ -78,7 +91,15 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const firstName = typeof body.firstName === 'string' ? body.firstName.trim() : undefined;
     const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : undefined;
-    const phone = typeof body.phone === 'string' ? body.phone.trim() : undefined;
+    const rawPhone = typeof body.phone === 'string' ? body.phone.trim() : undefined;
+    const phone = rawPhone ? normalizePhone(rawPhone) : undefined;
+
+    if (rawPhone && !isValidTogolesePhone(rawPhone)) {
+      return NextResponse.json(
+        { erreur: 'Le numéro de téléphone doit être togolais et respecter le format +228XXXXXXXX.' },
+        { status: 400 }
+      );
+    }
 
     const user = await prisma.user.upsert({
       where: { email: session.user.email },
