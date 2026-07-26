@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
 import { resolveProfileUpdateOperation } from '@/lib/profile-update';
+import bcrypt from 'bcryptjs';
 
 function buildName(firstName?: string | null, lastName?: string | null) {
   return `${firstName ?? ''} ${lastName ?? ''}`.trim() || null;
@@ -118,18 +119,57 @@ export async function PATCH(request: Request) {
       },
     });
 
-    const user = operation.mode === 'update'
-      ? await prisma.user.update({
-          where: operation.where,
-          data: operation.data,
-        })
-      : await prisma.user.create({
-          data: operation.create,
-        });
+    let user;
+
+    if (operation.mode === 'update') {
+      user = await prisma.user.update({
+        where: operation.where,
+        data: operation.data,
+      });
+    } else {
+      // Validate required fields before attempting to create to avoid DB null-constraint errors
+      const createPayload = operation.create;
+
+      if (!createPayload || !createPayload.email) {
+        console.error('Profile create failed - missing required email', { createPayload, session: session.user });
+        return NextResponse.json({ erreur: 'Impossible de créer le profil : email manquant' }, { status: 400 });
+      }
+
+      // Log the payload to detect any nulls that would violate DB constraints
+      console.error('Creating user payload for prisma.user.create', createPayload);
+
+      // Ensure required DB columns are provided. The migrations in the DB mark
+      // `password`, `firstName` and `lastName` as NOT NULL — supply safe
+      // defaults so the insert doesn't violate constraints.
+      const tempPlain = Math.random().toString(36).slice(2) + Date.now().toString();
+      const hashed = await bcrypt.hash(tempPlain, 10);
+
+      const safeCreatePayload = {
+        ...createPayload,
+        password: hashed,
+        firstName: createPayload.firstName ?? '',
+        lastName: createPayload.lastName ?? '',
+      } as any;
+
+      user = await prisma.user.create({
+        data: safeCreatePayload,
+      });
+    }
 
     return NextResponse.json(user);
-  } catch (error) {
-    console.error('Profile update failed', error);
+  } catch (error: any) {
+    // Log error with driver adapter details when available
+    console.error('Profile update failed', error?.message ?? error);
+    try {
+      if (error?.meta?.driverAdapterError) {
+        console.error('Driver adapter error cause:', error.meta.driverAdapterError.cause || error.meta.driverAdapterError);
+      } else if (error?.meta) {
+        console.error('Prisma meta:', error.meta);
+      }
+    } catch (e) {
+      console.error('Failed to log adapter error details', e);
+    }
+
     return NextResponse.json({ erreur: 'Impossible de mettre à jour le profil' }, { status: 500 });
   }
 }
