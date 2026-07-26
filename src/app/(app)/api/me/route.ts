@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
+import { resolveProfileUpdateOperation } from '@/lib/profile-update';
 
 function buildName(firstName?: string | null, lastName?: string | null) {
   return `${firstName ?? ''} ${lastName ?? ''}`.trim() || null;
@@ -101,34 +102,34 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const user = await prisma.user.upsert({
-      where: { email: session.user.email },
-      create: {
-        id: currentUser?.id ?? session.user.id,
+    const operation = resolveProfileUpdateOperation({
+      sessionUser: {
+        id: session.user.id,
         email: session.user.email,
-        firstName: firstName ?? currentUser?.firstName ?? session.user.firstName,
-        lastName: lastName ?? currentUser?.lastName ?? session.user.lastName,
-        phone: phone ?? currentUser?.phone ?? undefined,
-        name: buildName(
-          firstName ?? currentUser?.firstName ?? session.user.firstName,
-          lastName ?? currentUser?.lastName ?? session.user.lastName
-        ),
-        role: (session.user.role ?? 'EMPLOYEE') as any,
-        isActive: true,
-        image: currentUser?.image ?? undefined,
+        role: session.user.role,
+        firstName: session.user.firstName,
+        lastName: session.user.lastName,
       },
-      update: {
-        ...(firstName !== undefined ? { firstName } : {}),
-        ...(lastName !== undefined ? { lastName } : {}),
-        ...(phone !== undefined ? { phone } : {}),
-        ...(firstName !== undefined || lastName !== undefined
-          ? { name: buildName(firstName ?? currentUser?.firstName, lastName ?? currentUser?.lastName) }
-          : {}),
+      existingUser: currentUser,
+      body: {
+        firstName,
+        lastName,
+        phone: phone ?? undefined,
       },
     });
 
+    const user = operation.mode === 'update'
+      ? await prisma.user.update({
+          where: operation.where,
+          data: operation.data,
+        })
+      : await prisma.user.create({
+          data: operation.create,
+        });
+
     return NextResponse.json(user);
-  } catch {
+  } catch (error) {
+    console.error('Profile update failed', error);
     return NextResponse.json({ erreur: 'Impossible de mettre à jour le profil' }, { status: 500 });
   }
 }
