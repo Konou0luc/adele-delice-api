@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 const allowedOrigins = [
   "http://localhost:3000",
-  process.env.FRONTEND_URL!,
-].filter(Boolean);
+  ...(process.env.FRONTEND_URL ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+];
 
 export function middleware(request: NextRequest) {
   const origin = request.headers.get("origin");
